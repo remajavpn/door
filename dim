@@ -225,18 +225,18 @@ nice -20
 reneg-sec 0
 
 END
-echo '<ca>' >> /etc/openvpn/client.ovpn
-cat /etc/openvpn/ca.crt >> /etc/openvpn/client.ovpn
-echo '</ca>' >> /etc/openvpn/client.ovpn
-echo '<cert>' >> /etc/openvpn/client.ovpn
-cat /etc/openvpn/server.crt >> /etc/openvpn/client.ovpn
-echo '</cert>' >> /etc/openvpn/client.ovpn
-echo '<key>' >> /etc/openvpn/client.ovpn
-cat /etc/openvpn/server.key >> /etc/openvpn/client.ovpn
-echo '</key>' >> /etc/openvpn/client.ovpn
-echo '<tls-auth>' >> /etc/openvpn/client.ovpn
-cat /etc/openvpn/ta.key >> /etc/openvpn/client.ovpn
-echo '</tls-auth>' >> /etc/openvpn/client.ovpn
+echo '<ca>' >> /root/client.ovpn
+cat /etc/openvpn/ca.crt >> /root/client.ovpn
+echo '</ca>' >> /root/client.ovpn
+echo '<cert>' >> /root/client.ovpn
+cat /etc/openvpn/server.crt >> /root/client.ovpn
+echo '</cert>' >> /root/client.ovpn
+echo '<key>' >> /root/client.ovpn
+cat /etc/openvpn/server.key >> /root/client.ovpn
+echo '</key>' >> /root/client.ovpn
+echo '<tls-auth>' >> /root/client.ovpn
+cat /etc/openvpn/ta.key >> /root/client.ovpn
+echo '</tls-auth>' >> /root/client.ovpn
 cp client.ovpn /home/vps/public_html/
 # create tu200 openvpn config
 
