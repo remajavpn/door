@@ -611,19 +611,26 @@ service openvpn_tcp restart
 if [ "$TCP" = 1 ]; then
 echo "client
 cipher $CIPHER
-auth-user-pass
 dev tun
 proto tcp
 remote $IP $PORTTCP tcp
-resolv-retry infinite
-nobind
 persist-key
 persist-tun
-remote-cert-tls server
+pull
+resolv-retry infinite
+nobind
 comp-lzo
+setenv CLIENT_CERT 0
+remote-cert-tls server
 verb 3
-sndbuf 0
-rcvbuf 0
+mute-replay-warnings
+auth-user-pass
+auth-nocache
+redirect-gateway def1
+script-security 2
+route-method exe
+route-delay 2
+cipher none
 " > /etc/openvpn/clienttcp-common.txt
 newclienttcp "$CLIENT"
   fi
