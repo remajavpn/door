@@ -1464,8 +1464,7 @@ cat <<'mySiteOvpn' > /var/www/openvpn/index.html
         <script src="https://raw.githubusercontent.com/radzvpn/TNTNOLOADDNS/master//jquery.easing.min.js"></script>
         <script src="https://raw.githubusercontent.com/radzvpn/TNTNOLOADDNS/master/wow.js"></script>
         <script src="js/scripts.js"></script>
-    </body>
-</html> mySiteOvpn 
+    </body></html>mySiteOvpn 
 END
 
 # Unpack Embex homepage
