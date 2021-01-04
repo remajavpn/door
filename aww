@@ -1,0 +1,276 @@
+#!/bin/sh
+
+#Por EvandroÂ§ baseado no cÃ³digo de Mikodemos
+
+# Preparando
+export DEBIAN_FRONTEND=noninteractive
+MYIP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0'`;
+MYIP2="s/xxxxxxxxx/$MYIP/g";
+
+cd
+
+# SYSCTL TCP tune
+echo "net.ipv4.tcp_window_scaling = 1" >> /etc/sysctl.conf
+echo "net.core.rmem_max = 16777216" >> /etc/sysctl.conf
+echo "net.core.wmem_max = 16777216" >> /etc/sysctl.conf
+echo "net.core.rmem_default = 65536" >> /etc/sysctl.conf
+echo "net.core.wmem_default = 65536" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_mem = 16777216 16777216 16777216" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_rmem = 4096 87380 16777216" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_wmem = 4096 65536 16777216" >> /etc/sysctl.conf
+echo "net.ipv4.route.flush = 1" >> /etc/sysctl.conf
+
+####### TUNNING PARA SQUID ########
+# Reduzir o tempo de limpeza da tabela ARP
+# Expandir o seu tamanho
+echo "net.ipv4.neigh.default.gc_interval = 15" >> /etc/sysctl.conf
+echo "net.ipv4.neigh.default.gc_thresh1 = 4096" >> /etc/sysctl.conf
+echo "net.ipv4.neigh.default.gc_thresh2 = 8192" >> /etc/sysctl.conf
+echo "net.ipv4.neigh.default.gc_thresh3 = 16384" >> /etc/sysctl.conf
+# Aumento do numero de conexoes simultaneas
+# Reducao do tempo de espera entre as conexoes
+echo "net.core.somaxconn = 20480" >> /etc/sysctl.conf
+echo "net.core.netdev_max_backlog = 2048" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_fin_timeout = 10" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_tw_recycle = 1" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_tw_reuse = 1" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_syn_retries = 1" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_synack_retries = 1" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_max_syn_backlog = 2048" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_syncookies = 1" >> /etc/sysctl.conf
+echo "net.ipv4.ip_local_port_range = 1025 65535" >> /etc/sysctl.conf
+echo "fs.file-max = 999999" >> /etc/sysctl.conf
+
+# Ativar Encaminhamento IPV4
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
+
+# Desativar IPV6
+echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf && echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6 && sed -i '$ i\echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6' /etc/rc.local
+
+# Aplicar sysctl.conf
+sysctl -p
+
+# Remover Pacotes 
+apt-get -y --purge remove samba* && apt-get -y --purge remove apache2* && apt-get -y --purge remove sendmail* && apt-get -y --purge remove postfix* && apt-get -y --purge remove bind9* && apt-get -y --purge remove openssh* && apt-get -y autoremove;
+
+# Atualizar
+apt-get update && apt-get -y upgrade;
+
+# Instalar Ferramentas
+apt-get -y install iptables && apt-get -y install iftop && apt-get -y install htop && apt-get -y install nethogs && apt-get -y install apt-file && apt-get -y install ngrep && apt-get -y install screen && apt-get -y install zlib1g-dev && apt-get -y install make && apt-get -y install gcc && apt-get -y install build-essential;
+
+# Desativar exim para debian
+service exim4 stop && sysv-rc-conf exim4 off
+
+# Atualizar apt-file
+apt-file update
+
+# Instalar screenfetch
+cd
+wget --no-check-certificate https://raw.githubusercontent.com/KittyKatt/screenFetch/master/screenfetch-dev
+mv screenfetch-dev /usr/bin/screenfetch
+chmod +x /usr/bin/screenfetch
+echo "clear" >> .bash_profile
+echo "screenfetch" >> .bash_profile
+
+# Instalar squid3
+apt-get -y install squid3 && mv /etc/squid3/squid.conf /etc/squid3/squid.conf.ori && touch /etc/squid3/squid.conf && echo "acl localhost src 127.0.0.1/32 ::1
+acl to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1
+acl SSH dst xxxxxxxxx-xxxxxxxxx/255.255.255.255
+acl SSL_ports port 443
+acl Safe_ports port 80 443 70 210 1025-65535 280 488 591 777
+acl CONNECT method CONNECT
+acl HEAD method HEAD
+acl OPTIONS method OPTIONS
+acl GET method GET
+http_access allow SSH
+http_access allow HEAD
+http_access allow OPTIONS
+http_access allow GET
+http_access allow localhost
+http_access deny all
+http_port 80
+via off
+forwarded_for off
+request_header_access Allow allow all
+request_header_access Authorization allow all
+request_header_access WWW-Authenticate allow all
+request_header_access Proxy-Authorization allow all
+request_header_access Proxy-Authenticate allow all
+request_header_access Cache-Control allow all
+request_header_access Content-Encoding allow all
+request_header_access Content-Length allow all
+request_header_access Content-Type allow all
+request_header_access Date allow all
+request_header_access Expires allow all
+request_header_access Host allow all
+request_header_access If-Modified-Since allow all
+request_header_access Last-Modified allow all
+request_header_access Location allow all
+request_header_access Pragma allow all
+request_header_access Accept allow all
+request_header_access Accept-Charset allow all
+request_header_access Accept-Encoding allow all
+request_header_access Accept-Language allow all
+request_header_access Content-Language allow all
+request_header_access Mime-Version allow all
+request_header_access Retry-After allow all
+request_header_access Title allow all
+request_header_access Connection allow all
+request_header_access Proxy-Connection allow all
+request_header_access User-Agent allow all
+request_header_access Cookie allow all
+request_header_access All deny all
+coredump_dir /var/spool/squid3
+refresh_pattern ^ftp: 1440 20% 10080
+refresh_pattern ^gopher: 1440 0% 1440
+refresh_pattern -i (/cgi-bin/|\?) 0 0% 0
+refresh_pattern . 0 20% 4320" >> /etc/squid3/squid.conf && sed -i $MYIP2 /etc/squid3/squid.conf;
+
+# Instalar badvpn
+wget --no-check-certificate -O /usr/bin/badvpn-udpgw "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/badvpn-udpgw" && sed -i '$ i\screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300' /etc/rc.local && chmod +x /usr/bin/badvpn-udpgw && screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300
+
+# Instalar dropbeargithub
+apt-get -y install dropbear && sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear && sed -i 's/DROPBEAR_PORT=22/DROPBEAR_PORT=109/g' /etc/default/dropbear && sed -i 's/DROPBEAR_EXTRA_ARGS=/DROPBEAR_EXTRA_ARGS="-p 22"/g' /etc/default/dropbear && echo "/bin/false" >> /etc/shells && echo "/usr/sbin/nologin" >> /etc/shells
+
+# Upgrade dropbear 
+wget --no-check-certificate https://matt.ucc.asn.au/dropbear/releases/dropbear-2016.73.tar.bz2
+bzip2 -cd dropbear-2016.73.tar.bz2  | tar xvf -
+cd dropbear-2016.73
+./configure
+make && make install
+mv /usr/sbin/dropbear /usr/sbin/dropbear1
+ln /usr/local/sbin/dropbear /usr/sbin/dropbear
+service dropbear restart
+
+
+
+# install webserver
+apt-get -y install nginx libexpat1-dev libxml-parser-perl
+
+# install essential package
+apt-get -y install nano iptables-persistent dnsutils screen whois ngrep unzip unrar
+
+# Web Server
+cd
+rm /etc/nginx/sites-enabled/default
+rm /etc/nginx/sites-available/default
+wget -O /etc/nginx/nginx.conf "https://raw.githubusercontent.com/ara-rangers/vps/master/nginx.conf"
+mkdir -p /home/vps/public_html
+echo "<?php phpinfo(); ?>" > /home/vps/public_html/info.php
+wget -O /home/vps/public_html/index.html https://raw.githubusercontent.com/padubang/secret/main/index.html
+wget -O /etc/nginx/conf.d/vps.conf "https://raw.githubusercontent.com/padubang/mambang/main/vps.conf"
+service nginx restart
+
+# Instalar openvpn
+apt-get -y install openvpn && wget --no-check-certificate -O /etc/openvpn/openvpn.tar "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/openvpn-ubuntu.tar" && cd /etc/openvpn/ && tar xf openvpn.tar && service openvpn restart && wget --no-check-certificate -O /etc/openvpn/cliente.ovpn "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/cliente.conf" && sed -i $MYIP2 /etc/openvpn/cliente.ovpn && cd
+
+# Instalar iptables-persistent
+apt-get -y install iptables-persistent
+
+iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
+iptables -A INPUT -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m state --state NEW -j DROP
+iptables -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -j DROP
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 7300 -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 7300 -j ACCEPT
+iptables -A INPUT -p udp -m udp --dport 7300 -j ACCEPT
+iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -s 192.168.100.0/255.255.255.0 -j ACCEPT
+iptables -A FORWARD -j REJECT --reject-with icmp-port-unreachable
+iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+iptables -P OUTPUT ACCEPT
+iptables -P INPUT DROP
+
+invoke-rc.d iptables-persistent save
+
+# Instalar fail2ban
+apt-get -y install fail2ban && wget --no-check-certificate -O /etc/fail2ban/jail.conf "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/jail.conf" && sed -i $MYIP2 /etc/fail2ban/jail.conf && service fail2ban restart
+
+# Baixar scripts
+cd
+wget --no-check-certificate -O speedtest_cli.py "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/speedtest_cli.py"
+wget --no-check-certificate -O bench-network.sh "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/bench-network.sh"
+wget --no-check-certificate -O ps_mem.py "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/ps_mem.py"
+wget --no-check-certificate -O dropmon "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/dropmon.sh"
+wget --no-check-certificate -O userlogin.sh "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/userlogin.sh"
+wget --no-check-certificate -O userexpired.sh "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/userexpired.sh"
+wget --no-check-certificate -O userlimit.sh "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/userlimit.sh"
+wget --no-check-certificate -O expire.sh "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/expire.sh"
+wget --no-check-certificate -O autokill.sh "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/autokill.sh"
+wget --no-check-certificate -O add-user.sh "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/add-user.sh"
+wget --no-check-certificate -O trial.sh "https://raw.githubusercontent.com/llbranco/vpsautoinstall_debian/master/trial.sh"
+
+echo "@reboot root /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "@reboot root /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 5; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 10; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 15; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 20; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 25; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 30; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 35; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 40; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 45; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 50; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "* * * * * root sleep 55; /root/userlimit.sh 2" >> /etc/cron.d/userlimit
+echo "0 0 * * * root /sbin/reboot" > /etc/cron.d/reboot
+echo "* * * * * service dropbear restart" > /etc/cron.d/dropbear
+echo "@reboot root /root/autokill.sh" > /etc/cron.d/autokill
+sed -i '$ i\screen -AmdS check /root/autokill.sh' /etc/rc.local
+chmod +x bench-network.sh
+chmod +x speedtest_cli.py
+chmod +x ps_mem.py
+chmod +x userlogin.sh
+chmod +x userexpired.sh
+chmod +x userlimit.sh
+chmod +x autokill.sh
+chmod +x dropmon
+chmod +x expire.sh
+chmod +x add-user.sh
+chmod +x trial.sh
+
+groupadd cients
+
+# Finalizando
+service dropbear restart
+service fail2ban restart
+service squid3 restart
+service openvpn restart
+rm -rf ~/.bash_history && history -c
+echo "unset HISTFILE" >> /etc/profile
+
+# info
+clear
+echo "SERVICOS" 
+echo "-------" 
+echo "Dropbear : 443, 22" github
+echo "Squid   : 80(limit to IP SSH)" 
+echo "badvpn   : badvpn-udpgw port 7300" 
+echo "Fail2Ban : protect SSH brute force" 
+echo "FERRAMENTAS" 
+echo "-----" 
+echo "htop" 
+echo "iftop" 
+echo "rkhunter" 
+echo "nethogs: nethogs" 
+echo "SCRIPTS" 
+echo "------" 
+echo "screenfetch" 
+echo "./ps_mem.py" 
+echo "./speedtest_cli.py --share" 
+echo "./bench-network.sh" 
+echo "./userlogin.sh" 
+echo "./userexpired.sh" 
+echo "./userlimit.sh 2 [limit max 2 login]" 
+echo "sh dropmon [port] example: sh dropmon 443" 
+echo "Fail2Ban : [on]" 
+echo "===============================================" 
+echo "REINICIE AGORA / REBOOT NOW" 
+echo "===============================================" 
+cd
