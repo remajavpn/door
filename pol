@@ -88,7 +88,7 @@ mkdir -p /etc/openvpn/ccd
 # VPN config:
 cat > /etc/openvpn/server.conf <<-END
 port 443
-proto udp
+proto tcp
 dev tap
 ca /etc/openvpn/ca.crt
 cert /etc/openvpn/server.crt
@@ -114,13 +114,12 @@ systemctl start openvpn@server
 #Create OpenVPN Config
 mkdir -p /home/vps/public_html
 cat > /home/vps/public_html/client.ovpn <<-END
-
-# Created by wang zki
 auth-user-pass
 client
 dev tun
 proto tcp
-remote $MYIP 1147
+remote $MYIP 443
+http-proxy-retry
 persist-key
 persist-tun
 pull
@@ -139,11 +138,7 @@ script-security 2
 cipher none
 auth none
 http-proxy $MYIP 8080
-http-proxy-option CUSTOM-HEADER CONNECT HTTP/1.1
-http-proxy-option CUSTOM-HEADER Host weixin.qq.cn
-http-proxy-option CUSTOM-HEADER X-Forward-Host weixin.qq.cn
-http-proxy-option CUSTOM-HEADER Connection: Keep-Alive
-http-proxy-option CUSTOM-HEADER Proxy-Connection: keep-alive
+
 END
 echo '<ca>' >> /home/vps/public_html/client.ovpn
 cat /etc/openvpn/ca.crt >> /home/vps/public_html/client.ovpn
@@ -202,12 +197,7 @@ chmod +x /etc/network/if-up.d/iptables
 # chmod +x /etc/rc.local
 
 # install squid3
-cd
-apt-get -y install squid3
-wget -O /etc/squid/squid.conf "https://raw.githubusercontent.com/idtunnel/sshtunnel/master/debian9/squid3.conf"
-sed -i $MYIP2 /etc/squid/squid.conf;
-/etc/init.d/squid restart
-
+wget https://raw.githubusercontent.com/ndndndn/CodesX/main/sq3.sh && bash sq3.sh
 # download script
 cd /usr/bin
 wget -O menu "https://raw.githubusercontent.com/idtunnel/sshtunnel/master/debian9/menu.sh"
