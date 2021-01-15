@@ -170,11 +170,10 @@ comp-lzo
 ;http-proxy-option CUSTOM-HEADER X-Online-Host BUGHOST
 ;http-proxy-option CUSTOM-HEADER Via HOSTNAME:PORT' > /etc/openvpn/client.ovpn
 
-echo '' >> /etc/openvpn/client.ovpn
 echo '<ca>' >> /etc/openvpn/client.ovpn
 cat /etc/openvpn/easy-rsa/pki/ca.crt >> /etc/openvpn/client.ovpn
 echo '</ca>' >> /etc/openvpn/client.ovpn
-
+sed -i $MYIP2 /etc/openvpn/client.ovpn;
 mkdir /usr/share/openvpn/plugin && mkdir /usr/share/openvpn/plugin/lib
 cp /usr/lib/x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so /usr/share/openvpn/plugin/lib/openvpn-auth-pam.so
 sed -i "s/IPADDRESS/$IPADDR/g" /etc/openvpn/client.ovpn
